@@ -143,5 +143,5 @@ In First Out， 简称FIFO） 。 队列的出口端叫作队头（front） ， 
 Time33算法：
 
     对字符串的每个字符，迭代的乘以33
-    hash(i) = hash(i-1) * 33 + str[i]
+    hash(i) = hash(i-1) * 33 + str[i];
 
