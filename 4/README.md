@@ -197,7 +197,6 @@ O(nlogn)， 姑且把它归入本类）
 <a name="huan"></a>
 #### 4.3.3　双边循环法
 
-双边循环法
 
 	function quickSort(&$arr, $startIndex,$endIndex) {
 	// 递归结束条件： startIndex大于或等于endIndex时
