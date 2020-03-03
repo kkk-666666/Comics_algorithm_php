@@ -15,18 +15,14 @@
 ### [5.5.1　解题思路](#wuxu1)
 ## [5.6　寻找全排列的下一个数](#pai)
 ### [5.6.1　解题思路](#pai1)
-## 5.7　删去k个数字后的最小值
-### 5.7.1　又是一道关于数字的题目
-### 5.7.2　解题思路
-## 5.8　如何实现大整数相加
-### 5.8.1　加法，你会不会
-### 5.8.2　解题思路
-## 5.9　如何求解金矿问题
-### 5.9.1　一个关于财富自由的问题
-### 5.9.2　解题思路
-## 5.10　寻找缺失的整数
-## 5.10.1 “五行”缺一个整数
-## 5.10.2　问题扩展
+## [5.7　删去k个数字后的最小值](#shank)
+### [5.7.1　解题思路](#shank1)
+## [5.8　如何实现大整数相加](#dashu)
+### [5.8.1　解题思路](#dashu1)
+## [5.9　如何求解金矿问题](#jin)
+### [5.9.1　解题思路](#jin1)
+## [5.10　寻找缺失的整数](#yi)
+## [5.10.1　问题扩展](#yi1)
 
 
 
@@ -558,3 +554,376 @@ O（1） 的解法:对于一个整数n， 只需要计
 		 $numbers = findNearestNumber($numbers);
 		 var_dump($numbers);
 	 }
+
+
+<a name="shank"></a>
+### 5.7　删去k个数字后的最小值
+
+<a name="shank1"></a>
+#### 5.7.1　解题思路
+
+1.贪心算法,时间复杂度是O（kn）
+
+
+	 /**
+	 * 删除整数的k个数字， 获得删除后的最小值
+	 * @param num 原整数
+	 * @param k 删除数量
+	 */
+	 function removeKDigits($num, $k) {
+ 		$numNew = $num;
+ 		for($i=0; $i<$k; $i++){
+ 			$hasCut = false;
+ 			//从左向右遍历， 找到比自己右侧数字大的数字并删除
+ 			for($j=0; $j<strlen($numNew)-1;$j++){
+ 				if($numNew[$j] > $numNew[$j+1]){
+ 					$numNew = substr($numNew, 0, $j) . substr($numNew, $j+1,strlen($numNew));
+ 					$hasCut = true;
+ 					break;
+ 				}
+ 			}
+ 			//如果没有找到要删除的数字， 则删除最后一个数字
+ 			if(!$hasCut){
+ 				$numNew = substr($numNew, 0, strlen($numNew)-1);
+ 			}
+ 			//清除整数左侧的数字0
+ 			$numNew = removeZero($numNew);
+ 		}
+ 		//如果整数的所有数字都被删除了， 直接返回0
+ 		if(strlen($numNew) == 0){
+ 			return "0";
+ 		}
+ 		return $numNew;
+ 	}
+ 
+ 
+
+ 	function removeZero($num){
+ 		for($i=0; $i<strlen($num)-1; $i++){
+ 			if($num[0] != '0'){
+ 				break;
+ 			}
+ 			$num = substr($num, 1, strlen($num)) ;
+ 		}
+ 		return $num;
+ 	}
+
+
+
+	var_dump(removeKDigits("1593212",3));
+	var_dump(removeKDigits("30200",1));
+	var_dump(removeKDigits("10",2));
+	var_dump(removeKDigits("541270936",3));
+
+2.栈,时间复杂度是O(n),空间复杂度是O(n)
+
+	 /**
+	 * 删除整数的k个数字， 获得删除后的最小值
+	 * @param num 原整数
+	 * @param k 删除数量
+	 */
+	 function removeKDigits($num, $k) {
+ 	//新整数的最终长度 = 原整数长度-k
+ 		$len = strlen($num);
+ 		$newLength = $len - $k;
+ 		//创建一个栈， 用于接收所有的数字
+ 		$stack = array();
+ 		$top = 0;
+ 		for ($i = 0; $i < $len; ++$i) {
+ 			//遍历当前数字
+ 			$c = $num[$i];
+ 			//当栈顶数字大于遍历到的当前数字时， 栈顶数字出栈（相当于删除数字）
+ 			while ($top > 0 && $stack[$top-1] > $c && $k > 0) {
+ 				$top -= 1;
+ 				$k -= 1;
+ 			}
+ 			//遍历到的当前数字入栈
+ 			$stack[$top++] = $c;
+ 		}
+ 		// 找到栈中第1个非零数字的位置， 以此构建新的整数字符串
+ 		$offset = 0;
+ 		while ($offset < $newLength && $stack[$offset] == '0') {
+ 			$offset++;
+ 		}
+ 		return $offset == $newLength? "0": join('',array_slice($stack,$offset,$newLength - $offset));
+ 	}
+
+
+
+	var_dump(removeKDigits("1593212",3));
+	var_dump(removeKDigits("30200",1));
+	var_dump(removeKDigits("10",2));
+	var_dump(removeKDigits("541270936",3));
+
+
+<a name="dashu"></a>
+### 5.8　如何实现大整数相加
+
+<a name="dashu1"></a>
+#### 5.8.1　解题思路
+
+大整数相加的详细步骤:
+
+第1步， 创建两个整型数组， 数组长度是较大整数的位数+1。 把每
+一个整数倒序存储到数组中， 整数的个位存于数组下标为0的位置， 最
+高位存于数组的尾部。 之所以倒序存储， 是因为这样更符合从左到右访
+问数组的习惯。
+
+第2步， 创建结果数组， 结果数组的长度同样是较大整数的位数
++1， +1的目的很明显， 是给最高位进位预留的。
+
+第3步， 遍历两个数组， 从左到右按照对应下标把元素两两相加，
+就像小学生计算竖式一样。
+
+时间复杂度是O(n)
+
+	 /**
+	 * 大整数求和
+	 * @param bigNumberA 大整数A
+	 * @param bigNumberB 大整数B
+	 */
+	 function bigNumberSum($bigNumberA, $bigNumberB) {
+	 //1.把两个大整数用数组逆序存储， 数组长度等于较大整数位数+1
+ 		$lena = strlen($bigNumberA);
+ 		$lenb = strlen($bigNumberB);
+ 		$maxLength = $lena > $lenb ? $lena : $lenb;
+
+ 
+ 		$arrayA = array();
+ 		for($i=0; $i<$lena; $i++){
+ 			$arrayA[$i] = $bigNumberA[$lena-1-$i];
+ 		}
+ 
+ 		$arrayB = array();
+ 		for($i=0; $i< $lenb; $i++){
+ 			$arrayB[$i] = $bigNumberB[$lenb-1-$i];
+ 		}
+ 
+
+ 		//2.构建result数组， 数组长度等于较大整数位数+1
+ 		$result = array();
+ 		//3.遍历数组， 按位相加
+ 		for($i=0; $i<$maxLength; $i++){
+ 			$temp = isset($result[$i]) ? $result[$i] : 0;
+ 			$temp += isset($arrayA[$i]) ? $arrayA[$i] : 0;
+ 			$temp += isset($arrayB[$i]) ? $arrayB[$i] : 0;
+
+ 			//判断是否进位
+ 			if($temp >= 10){
+ 				$temp = $temp-10;
+ 				$result[$i+1] = 1;
+ 			}
+ 			$result[$i] = $temp;
+ 		} 
+
+		//4.把result数组再次逆序并转成String
+	 
+		krsort($result);
+		return join('', $result);
+
+ 	}
+
+
+	var_dump(bigNumberSum("426709752318", "95481253129"));
+
+
+2.我们可以把大整数的每9位作为数组的一个元素， 进行加法运算。
+
+	 /**
+	 * 大整数求和
+	 * @param bigNumberA 大整数A
+	 * @param bigNumberB 大整数B
+	 */
+	 function bigNumberSum1($bigNumberA, $bigNumberB) {
+ 		//1.把两个大整数转为9位数的小数组
+ 		$snum = 9;
+		$lena = strlen($bigNumberA);
+ 		$lenb = strlen($bigNumberB);
+ 
+ 		$lena1 = ceil($lena/$snum);
+ 		$lenb1 = ceil($lenb/$snum);
+ 		$maxLength = $lena1 > $lenb1 ? $lena1 : $lenb1;
+
+ 
+ 		$arrayA = c($bigNumberA, $snum, $lena1);
+ 		$arrayB = c($bigNumberB, $snum, $lenb1);
+
+		 //2.构建result数组， 数组长度等于较大整数位数+1
+		 $result = array();
+ 		//3.遍历数组， 按对应下标相加
+ 		for($i=0; $i<$maxLength; $i++){
+			 $temp = isset($result[$i]) ? $result[$i] : 0;
+			 $temp += isset($arrayA[$i]) ? $arrayA[$i] : 0;
+			 $temp += isset($arrayB[$i]) ? $arrayB[$i] : 0;
+
+ 			//判断是否进位
+ 			if($temp >= pow(10, $snum)){
+ 				$temp = $temp-pow(10, $snum);
+ 				$result[$i+1] = 1;
+ 			}
+ 			$result[$i] = $temp;
+ 		} 
+ 
+ 		//4.把result数组再次逆序并转成String
+		krsort($result);
+
+		return join('', $result);
+
+ 	}
+ 
+	 function c($bigNum, $snum, $t){
+	     $array = array();
+	     
+	     $numlen = strlen($bigNum);
+	     for($i=0; $i<$t; $i++){
+	     
+	         $len = $numlen-$i*$snum;
+	         $len1 = $len >= $snum ? $snum : $len;
+	         
+	         $start = $len >= $snum ? $len-($i+1)*$snum: 0;
+	    
+	         $array[$i] = substr($bigNum, $start, $len1);
+	     }
+	     
+	     return $array;
+	 }
+
+
+	var_dump(bigNumberSum1("426709752318", "95481253129"));
+
+
+
+<a name="jin"></a>
+### 5.9　如何求解金矿问题
+
+<a name="jin1"></a>
+#### 5.9.1　解题思路
+
+题目
+很久很久以前， 有一位国王拥有5座金矿， 每座金矿的黄金储量不
+同， 需要参与挖掘的工人人数也不同。 例如有的金矿储量是500kg黄
+金， 需要5个工人来挖掘； 有的金矿储量是200kg黄金， 需要3个工人来
+挖掘……
+如果参与挖矿的工人的总数是10。 每座金矿要么全挖， 要么不挖，
+不能派出一半人挖取一半的金矿。 要求用程序求出， 要想得到尽可能多
+的黄金， 应该选择挖取哪几座金矿？
+
+
+动态规划题目
+所谓动态规
+划， 就是把复杂的问题简化成规模较小的子问题， 再从简单的子问
+题自底向上一步一步递推， 最终得到复杂问题的最优解。
+
+动态规划的要点： 确定全局最
+优解和最优子结构之间的关系， 以及问题的边界。 这个关系用数学
+公式来表达的话， 就叫作状态转移方程式。
+
+时间复杂度O(nw),空间复杂度O(n)
+
+	 /**
+	 * 获得金矿最优收益
+	 * @param w 工人数量
+	 * @param p 金矿开采所需的工人数量
+	 * @param g 金矿储量
+	*/
+	function getBestGoldMiningV3($w, $p, $g){
+ 		//创建当前结果
+ 
+ 		$results = array();
+ 		$results = array_pad($results, $w+1, 0);
+ 		$len = count($p);
+ 		//填充一维数组
+ 		for($i=1; $i<=$len; $i++){
+ 			for($j=$w; $j>=1; $j--){
+     			if($j>=$p[$i-1]){
+ 					$results[$j] = max($results[$j], $results[$j-$p[$i-1]]+ $g[$i-1]);
+ 				}
+ 			}
+ 		}
+ 		//返回最后1个格子的值
+ 		return $results[$w];
+ 	}
+
+
+	$w = 10;
+	$p = array(5, 5, 3, 4 ,3);
+	$g = array(400, 500, 200, 300 ,350);
+	var_dump(" 最优收益： " . getBestGoldMiningV3($w, $p, $g));
+
+
+
+<a name="yi"></a>
+### 5.10　寻找缺失的整数
+
+<a name="yi1"></a>
+#### 5.10.1　问题扩展
+
+
+1.在一个无序数组里有99个不重复的正整数， 范围是1～100， 唯独缺
+少1个1～100中的整数。 如何找出这个缺失的整数？
+
+这是一个很简单也很高效的方法， 先算出1+2+3+…+100的和， 然
+后依次减去数组里的元素， 最后得到的差值， 就是那个缺失的整数。
+假设数组长度是n， 那么该解法的时间复杂度是O(n)， 空间复杂度是O(1)。
+
+
+2.第1次扩展：
+一个无序数组里有若干个正整数， 范围是1～100， 其中99个整数都
+出现了偶数次， 只有1个整数出现了奇数次， 如何找到这个出现奇数次
+的整数？
+
+解法：
+遍历整个数组， 依次做异或运算。 由于异或运算在进行位运算时，
+相同为0， 不同为1， 因此所有出现偶数次的整数都会相互抵消变成0，
+只有唯一出现奇数次的整数会被留下。
+
+
+3.第2次扩展：
+假设一个无序数组里有若干个正整数， 范围是1～100， 其中有98个
+整数出现了偶数次， 只有2个整数出现了奇数次， 如何找到这2个出现奇
+数次的整数？
+
+解法：
+把2个出现了奇数次的整数命名为A和B。 遍历整个数组， 然后依次
+做异或运算， 进行异或运算的最终结果， 等同于A和B进行异或运算的
+结果。 在这个结果中， 至少会有一个二进制位是1（如果都是0， 说明A
+和B相等， 和题目不相符） 。
+
+
+	function findLostNum($array) {
+ 	//用于存储2个出现奇数次的整数
+ 		$result = array();
+  		$result = array_pad($result, 2, 0);
+ 		//第1次进行整体异或运算
+ 		$xorResult = 0;
+ 		$len = count($array);
+ 		for($i=0;$i<$len;$i++){
+ 			$xorResult^=$array[$i];
+	    }
+ 		//如果进行异或运算的结果为0， 则说明输入的数组不符合题目要求
+ 		if($xorResult == 0){
+ 			return null;
+ 		}
+ 		//确定2个整数的不同位， 以此来做分组
+ 		$separator = 1;
+ 		while (0==($xorResult&$separator)){
+ 			$separator<<=1;
+ 		}
+ 		//第2次分组进行异或运算
+ 		for($i=0;$i<$len;$i++){
+ 			if(0==($array[$i]&$separator)){
+ 				$result[0]^=$array[$i];
+ 			}else {
+ 				$result[1]^=$array[$i];
+ 			}
+ 		}
+
+ 		return $result;
+ 	}
+
+
+	$array = array(4,1,2,2,5,1,4,3);
+	$result = findLostNum($array);
+	
+	var_dump($result[0]. ",".$result[1]);
+
